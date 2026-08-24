@@ -1,0 +1,37 @@
+{
+  "name": "bouncing-ball",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Elastic-collision playground: vector reflection, impulse response and conserved momentum, implemented twice - Python/turtle and JavaScript/canvas.",
+  "keywords": [
+    "physics",
+    "simulation",
+    "canvas",
+    "collision-detection",
+    "elastic-collision",
+    "vector-reflection",
+    "javascript",
+    "nodejs",
+    "python",
+    "turtle",
+    "zero-dependencies"
+  ],
+  "homepage": "https://kingpingx.github.io/Bouncing-Ball/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kingpingx/Bouncing-Ball.git"
+  },
+  "bugs": {
+    "url": "https://github.com/kingpingx/Bouncing-Ball/issues"
+  },
+  "main": "web/physics.js",
+  "files": [
+    "web"
+  ],
+  "scripts": {
+    "test": "node web/physics.test.js && node web/legacy.test.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

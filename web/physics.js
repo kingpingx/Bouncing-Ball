@@ -119,6 +119,11 @@
       this.populate(this.settings.ballCount);
     }
 
+    /** Which controls this engine can honour. The UI greys out the rest. */
+    get capabilities() {
+      return { gravity: true, restitution: true, ballCollisions: true };
+    }
+
     /** Canvas coordinates: origin top-left, +y down. */
     get left() { return 0; }
     get top() { return 0; }

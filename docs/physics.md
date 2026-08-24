@@ -7,8 +7,10 @@ Two parts:
   nothing else — no vectors, no dot products.
 - **[Part B — The first approach, and how to fix it](#part-b--the-first-approach-and-how-to-fix-it)**
   looks at the slope-and-angle method this project started with, why it was fragile, and the
-  eight changes that make it work. The result is runnable:
-  [`legacy/original_fixed.py`](../legacy/original_fixed.py).
+  eight changes that make it work. The result is runnable in both languages —
+  [`legacy/original_fixed.py`](../legacy/original_fixed.py) and
+  [`web/legacy.js`](../web/legacy.js), the latter switchable live in the browser demo, so you
+  can watch the two approaches on the same canvas.
 
 ---
 
@@ -681,6 +683,44 @@ about 50 lines, one ball, still angle-based, no vectors anywhere. Run it with:
 ```bash
 python legacy/original_fixed.py
 ```
+
+## Running the old approach next to the new one
+
+It is ported to JavaScript as [`web/legacy.js`](../web/legacy.js), so the browser demo can run
+it too: choose **Slope & angle (v1)** from the Engine dropdown, press <kbd>E</kbd>, or open
+`web/index.html?engine=slope`. Same canvas, same renderer, same arena, same ball count — the
+only thing that changes is which core is stepping the balls, which is what makes the two
+comparable at all.
+
+The port keeps the *representation*, not just the answer. A ball's motion is stored the way
+turtle stores it, as a scalar `speed` and a `heading` in degrees; `vx` and `vy` exist only as
+accessors that convert on demand. Watch the **heading** readout that appears in the HUD — that
+one number is the engine's entire state of motion.
+
+Converting on demand is also where the cost of the old model becomes visible in code. Scaling
+the speed is a single multiply, because here speed genuinely *is* a number:
+
+```js
+scaleSpeed(factor) {
+  for (const ball of this.balls) ball.speed *= factor;
+}
+```
+
+But the click shockwave has no velocity vector to add an impulse to, so it has to build one,
+push it, and take it apart again — the round trip the vector engine never makes:
+
+```js
+ball.setVelocity(
+  ball.vx + (dx / distance) * force,   // heading + speed -> vector
+  ball.vy + (dy / distance) * force
+);                                     // -> and back to heading + speed
+```
+
+The port is also missing what the original was missing: no gravity, no restitution, no
+ball-to-ball response. The demo greys those controls out when you switch to it rather than
+accepting settings it would silently ignore, and its balls pass straight through each other.
+[`web/legacy.test.js`](../web/legacy.test.js) asserts all three absences alongside the
+reflection cases, so the comparison stays honest as the code moves.
 
 ## The punchline
 

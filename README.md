@@ -21,6 +21,9 @@ turtle, one with canvas.</em></p>
 Open `web/index.html` in any modern browser. That is the whole procedure; it works straight
 off the disk, no server needed.
 
+It carries **both** physics engines: the current vector-reflection one, and the slope-and-angle
+approach this project started with. Press <kbd>E</kbd> to swap between them mid-run.
+
 ### Python — no install either
 
 ```bash
@@ -54,6 +57,7 @@ Both versions use the same keys.
 | <kbd>R</kbd> | Reset |
 | <kbd>H</kbd> | Hide the HUD *(Python only)* |
 | <kbd>B</kbd> | Glow on / off *(browser only)* |
+| <kbd>E</kbd> | Swap physics engine: vector reflection / the original slope-and-angle *(browser only)* |
 | <kbd>Q</kbd> / <kbd>Esc</kbd> | Quit *(Python only)* |
 
 Mouse: **click empty space** for a shockwave that shoves every ball away from the pointer.
@@ -64,6 +68,7 @@ The browser version can be preset from the URL:
 
 ```
 web/index.html?balls=20&gravity=1&restitution=0.85&seed=42&collisions=0&trails=0
+web/index.html?engine=slope                 # boot straight into the original approach
 ```
 
 ---
@@ -151,8 +156,10 @@ web/
   index.html             the browser version - just open it
   styles.css
   physics.js             the same model, ported; runs in Node too
-  app.js                 canvas renderer, input and UI
+  legacy.js              the original slope/angle approach, ported too
+  app.js                 canvas renderer, input, UI and the engine switch
   physics.test.js        21 tests, Node built-in test runner
+  legacy.test.js         21 more, for the old engine
 ```
 
 The split that matters: **`world.py` imports nothing from turtle, and `physics.js` touches no
@@ -165,7 +172,7 @@ with no display attached.
 
 ```bash
 python -m unittest discover -s tests -t .   # 35 tests
-node web/physics.test.js                    # 21 tests
+npm test                                    # 42 tests: both browser engines
 ```
 
 Both suites run headless in about a second and need nothing installed.
@@ -187,7 +194,7 @@ geometry, but it fought the tooling in a few ways:
 | Movement of 1–2 px per iteration, so speed depended on how fast your machine ran | Velocity in px/second, integrated against real elapsed time |
 | One ball, one colour, no interaction | Many balls with mass-based collisions, gravity, trails, and mouse interaction |
 | A `print()` on every frame | A HUD showing ball count, bounces, fps and total kinetic energy |
-| No tests | 56 tests across the two implementations |
+| No tests | 77 tests across the implementations |
 
 The physics is also honest now: energy is conserved to floating-point precision when
 `restitution = 1.0`, and it decays predictably when you turn the bounciness down.
@@ -196,11 +203,23 @@ The physics is also honest now: energy is conserved to floating-point precision 
 into a horizontal wall really does turn the ball 60°. What failed was the *representation*:
 slopes are undefined for vertical lines, and `abs()` threw away the turn direction, which is
 what forced the sixteen branches. Eight changes fix it, and the two that matter most collapse
-those ~190 lines to four. The result runs:
+those ~190 lines to four. The fixed original runs in both languages:
 
 ```bash
-python legacy/original_fixed.py
+python legacy/original_fixed.py       # turtle, one ball, exactly as it was
+open web/index.html?engine=slope      # the same approach, on canvas
 ```
+
+**Both engines ship in the browser demo.** The old approach is a second physics core
+(`web/legacy.js`) that the renderer can swap to while it runs: pick it from the **Engine**
+dropdown or press <kbd>E</kbd>. Same arena, same renderer, same ball count carried across —
+only the maths underneath changes.
+
+Two things make the difference visible. A **heading** readout appears in the HUD, because a
+single angle in degrees is the old engine's entire state where the new one carries a velocity
+vector. And the controls the original had no notion of — gravity, bounciness, ball-to-ball
+collisions — grey themselves out, so leave several balls running and watch them pass straight
+through each other. Switch back and your settings return.
 
 The post-mortem and the fixes are Part B of [docs/physics.md](docs/physics.md). The punchline:
 reflecting a turtle heading off a wall at angle `w` is `h_out = 2w - h`, which is

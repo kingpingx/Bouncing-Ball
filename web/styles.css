@@ -163,7 +163,7 @@ input:focus-visible {
   font-family: var(--mono);
 }
 
-.slider span {
+.select span, .slider span {
   display: flex;
   justify-content: space-between;
   font-size: 12px;
@@ -176,6 +176,39 @@ input:focus-visible {
   color: var(--accent);
   font-variant-numeric: tabular-nums;
 }
+
+select {
+  font: inherit;
+  font-size: 13px;
+  width: 100%;
+  color: var(--text);
+  background: rgba(240, 246, 252, 0.06);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 8px;
+  cursor: pointer;
+}
+
+select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* The panel is translucent, so the native dropdown list needs its own ground. */
+select option { background: #161b22; color: var(--text); }
+
+/* One line of context under the engine picker, explaining what the choice
+   changes. Sits tight under it rather than in the panel's normal 12px rhythm. */
+.note {
+  margin: -6px 0 0;
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+/* A control the current engine cannot honour: still readable, clearly inert. */
+.row.unsupported {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+
+.row.unsupported input { pointer-events: none; }
 
 input[type="range"] {
   -webkit-appearance: none;

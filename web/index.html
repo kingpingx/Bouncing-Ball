@@ -18,6 +18,7 @@
       <div><dt>bounces</dt><dd id="statBounces">0</dd></div>
       <div><dt>fps</dt><dd id="statFps">0</dd></div>
       <div><dt>energy</dt><dd><span id="statEnergy">0</span> MJ</dd></div>
+      <div id="statHeadingItem" hidden><dt>heading</dt><dd><span id="statHeading">0</span>&deg;</dd></div>
     </dl>
   </header>
 
@@ -32,6 +33,16 @@
         <button id="pause" class="button" aria-pressed="false">Pause</button>
         <button id="reset" class="button">Reset</button>
       </div>
+
+      <label class="row select">
+        <span>Engine <kbd>E</kbd></span>
+        <select id="engine" autocomplete="off">
+          <option value="vector">Vector reflection (v2)</option>
+          <option value="slope">Slope &amp; angle (v1)</option>
+        </select>
+      </label>
+
+      <p class="note" id="engineNote"></p>
 
       <label class="row slider">
         <span>Balls <output id="countValue">7</output></span>
@@ -66,12 +77,14 @@
       <p class="hint">
         Drag a ball to fling it. Click empty space for a shockwave.<br>
         <kbd>Space</kbd> pause &middot; <kbd>&plusmn;</kbd> add/remove &middot;
-        <kbd>&uarr;</kbd><kbd>&darr;</kbd> speed &middot; <kbd>R</kbd> reset
+        <kbd>&uarr;</kbd><kbd>&darr;</kbd> speed &middot; <kbd>E</kbd> engine &middot;
+        <kbd>R</kbd> reset
       </p>
     </div>
   </section>
 
   <script src="physics.js"></script>
+  <script src="legacy.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

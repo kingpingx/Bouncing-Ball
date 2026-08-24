@@ -1,14 +1,39 @@
 /**
  * Bouncing Ball - canvas renderer and UI.
  *
- * All the maths lives in physics.js; this file only draws what the World says
- * and forwards input back to it. Loaded as a classic script (not a module) on
- * purpose, so opening index.html straight off the disk works without a server.
+ * All the maths lives in physics.js (the current vector engine) and legacy.js
+ * (the original slope-and-angle one); this file only draws what the chosen
+ * World says and forwards input back to it. Both engines expose the same
+ * surface, so the renderer never has to know which one is running.
+ *
+ * Loaded as a classic script (not a module) on purpose, so opening index.html
+ * straight off the disk works without a server.
  */
 (function () {
   'use strict';
 
   const { World, clamp } = window.BouncingBallPhysics;
+  const { LegacyWorld } = window.BouncingBallLegacy;
+
+  /**
+   * The two physics cores, swappable at runtime. Same renderer, same controls,
+   * same arena - only the maths underneath changes, which is the whole point
+   * of being able to flip between them.
+   */
+  const ENGINES = {
+    vector: {
+      World,
+      note: 'Reflects the velocity vector about the surface normal: v - 2(v·n)n. ' +
+        'Mass, gravity and ball-to-ball impulse all build on that.',
+    },
+    slope: {
+      World: LegacyWorld,
+      note: 'The approach this project started with: a heading in degrees, reflected ' +
+        'as 2w - h. No mass, no gravity, no ball-to-ball response, so balls pass ' +
+        'straight through each other.',
+    },
+  };
+  const DEFAULT_ENGINE = 'vector';
 
   const COLORS = {
     background: '#0d1117',
@@ -43,7 +68,12 @@
     Object.keys(settings).forEach((key) => {
       if (settings[key] === undefined) delete settings[key];
     });
-    return { settings, gravityOn: flag('gravity') === true, trailsOn: flag('trails') !== false };
+    return {
+      settings,
+      engine: ENGINES[params.get('engine')] ? params.get('engine') : DEFAULT_ENGINE,
+      gravityOn: flag('gravity') === true,
+      trailsOn: flag('trails') !== false,
+    };
   }
 
   /** Cheap "#rrggbb" -> "rgba(r, g, b, a)". */
@@ -63,10 +93,18 @@
       this.ctx = canvas.getContext('2d');
       this.dpr = Math.min(window.devicePixelRatio || 1, 2);
 
-      const size = this.measure();
-      this.world = new World(size.width, size.height, url.settings);
-      if (url.gravityOn) this.world.setGravity(true);
-
+      this.baseSettings = url.settings;
+      // What the *user* asked for, kept apart from what the running engine can
+      // deliver. Switching to the old engine drops gravity, bounciness and
+      // ball-to-ball collisions; switching back restores these rather than
+      // whatever the old engine pinned them to.
+      this.preferred = {
+        restitution: url.settings.restitution === undefined ? 1 : url.settings.restitution,
+        ballCollisions: url.settings.ballCollisions !== false,
+        gravity: url.gravityOn,
+      };
+      this.engine = null;
+      this.world = null;
       this.paused = false;
       this.trails = url.trailsOn;
       this.glow = true;
@@ -77,10 +115,12 @@
       this.accumulator = 0;
       this.lastFrame = performance.now();
 
+      // Builds the world and pushes the whole model into the controls.
+      this.setEngine(url.engine);
+
       this.resize();
       this.bindUi();
       this.bindInput();
-      this.syncUi();
       requestAnimationFrame(this.frame.bind(this));
     }
 
@@ -160,6 +200,9 @@
         case 't': case 'T': this.setTrails(!this.trails); return true;
         case 'c': case 'C': this.setCollisions(!this.world.settings.ballCollisions); return true;
         case 'b': case 'B': this.setGlow(!this.glow); return true;
+        case 'e': case 'E':
+          this.setEngine(this.engine === 'slope' ? 'vector' : 'slope');
+          return true;
         case 'r': case 'R': this.reset(); return true;
         case '+': case '=': this.setBallCount(this.world.balls.length + 1); return true;
         case '-': case '_': this.setBallCount(this.world.balls.length - 1); return true;
@@ -185,9 +228,62 @@
       $('#pause').setAttribute('aria-pressed', String(value));
     }
 
+    /**
+     * Swap the physics core. The arena, the ball count and the bounciness
+     * carry over so the two engines can be compared like for like; anything
+     * the incoming engine cannot represent is dropped and its control greyed
+     * out.
+     */
+    setEngine(name) {
+      const key = ENGINES[name] ? name : DEFAULT_ENGINE;
+      if (this.engine === key) return;
+
+      const previous = this.world;
+      const size = this.measure();
+      const Engine = ENGINES[key].World;
+      this.engine = key;
+      this.world = new Engine(size.width, size.height, Object.assign(
+        {},
+        this.baseSettings,
+        {
+          restitution: this.preferred.restitution,
+          ballCollisions: this.preferred.ballCollisions,
+        },
+        previous ? { ballCount: previous.balls.length } : {}
+      ));
+      this.setGravity(this.preferred.gravity);
+
+      // Nothing on screen belongs to the old world any more.
+      this.ripples.length = 0;
+      this.grabbed = null;
+      this.canvas.classList.remove('grabbing', 'hovering');
+
+      $('#engineNote').textContent = ENGINES[key].note;
+      $('#statHeadingItem').hidden = key !== 'slope';
+      this.syncUi();
+    }
+
+    /** Grey out every control the current engine has no answer for. */
+    applyCapabilities() {
+      const caps = this.world.capabilities;
+      const gated = [
+        ['#gravity', caps.gravity],
+        ['#collisions', caps.ballCollisions],
+        ['#restitution', caps.restitution],
+      ];
+      for (const [selector, supported] of gated) {
+        const input = $(selector);
+        const row = input.closest('.row');
+        input.disabled = !supported;
+        row.classList.toggle('unsupported', !supported);
+        row.title = supported ? '' : 'The original approach had no notion of this.';
+      }
+    }
+
     setGravity(value) {
-      this.world.setGravity(value);
-      $('#gravity').checked = value;
+      this.preferred.gravity = value;
+      this.world.setGravity(value && this.world.capabilities.gravity);
+      $('#gravity').checked = this.world.gravityEnabled;
     }
 
     setTrails(value) {
@@ -197,8 +293,9 @@
     }
 
     setCollisions(value) {
-      this.world.settings.ballCollisions = value;
-      $('#collisions').checked = value;
+      this.preferred.ballCollisions = value;
+      this.world.settings.ballCollisions = value && this.world.capabilities.ballCollisions;
+      $('#collisions').checked = this.world.settings.ballCollisions;
     }
 
     setGlow(value) {
@@ -214,8 +311,9 @@
     }
 
     setRestitution(value) {
-      this.world.settings.restitution = value;
-      $('#restitutionValue').textContent = value.toFixed(2);
+      this.preferred.restitution = value;
+      if (this.world.capabilities.restitution) this.world.settings.restitution = value;
+      $('#restitutionValue').textContent = this.world.settings.restitution.toFixed(2);
     }
 
     reset() {
@@ -226,6 +324,7 @@
     bindUi() {
       $('#pause').addEventListener('click', () => this.setPaused(!this.paused));
       $('#reset').addEventListener('click', () => this.reset());
+      $('#engine').addEventListener('change', (e) => this.setEngine(e.target.value));
       $('#gravity').addEventListener('change', (e) => this.setGravity(e.target.checked));
       $('#trails').addEventListener('change', (e) => this.setTrails(e.target.checked));
       $('#collisions').addEventListener('change', (e) => this.setCollisions(e.target.checked));
@@ -242,8 +341,11 @@
       });
     }
 
-    /** Push the current model state into every control, once, at startup. */
+    /** Push the current model state into every control - at startup, and
+     *  again whenever the engine swaps under them. */
     syncUi() {
+      this.applyCapabilities();
+      $('#engine').value = this.engine;
       $('#gravity').checked = this.world.gravityEnabled;
       $('#trails').checked = this.trails;
       $('#collisions').checked = this.world.settings.ballCollisions;
@@ -397,6 +499,12 @@
       $('#statBounces').textContent = world.bounceCount.toLocaleString();
       $('#statFps').textContent = String(Math.round(this.fps));
       $('#statEnergy').textContent = (world.totalKineticEnergy / 1e6).toFixed(2);
+
+      // The old engine's defining state variable, shown only when it is live.
+      if (this.engine === 'slope') {
+        const lead = world.balls[0];
+        $('#statHeading').textContent = lead ? String(Math.round(lead.heading)) : '0';
+      }
     }
   }
 

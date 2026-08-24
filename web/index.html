@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>Bouncing Ball</title>
+  <meta name="description" content="Elastic collision playground: vector reflection, impulse response and conserved momentum on an HTML canvas.">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='12' fill='%23ff5c8a'/></svg>">
+</head>
+<body>
+  <canvas id="stage" aria-label="Bouncing ball simulation"></canvas>
+
+  <header class="stats" id="stats">
+    <h1>Bouncing&nbsp;Ball</h1>
+    <dl>
+      <div><dt>balls</dt><dd id="statBalls">0</dd></div>
+      <div><dt>bounces</dt><dd id="statBounces">0</dd></div>
+      <div><dt>fps</dt><dd id="statFps">0</dd></div>
+      <div><dt>energy</dt><dd><span id="statEnergy">0</span> MJ</dd></div>
+    </dl>
+  </header>
+
+  <section class="panel" id="panel" aria-label="Simulation controls">
+    <div class="panel-head">
+      <h2>Controls</h2>
+      <button id="panelToggle" class="icon-button" aria-expanded="true" title="Collapse panel">-</button>
+    </div>
+
+    <div class="panel-body">
+      <div class="row buttons">
+        <button id="pause" class="button" aria-pressed="false">Pause</button>
+        <button id="reset" class="button">Reset</button>
+      </div>
+
+      <label class="row slider">
+        <span>Balls <output id="countValue">7</output></span>
+        <input type="range" id="count" autocomplete="off" min="1" max="60" step="1" value="7">
+      </label>
+
+      <label class="row slider">
+        <span>Bounciness <output id="restitutionValue">1.00</output></span>
+        <input type="range" id="restitution" autocomplete="off" min="0.4" max="1" step="0.01" value="1">
+      </label>
+
+      <label class="row toggle">
+        <input type="checkbox" id="gravity" autocomplete="off">
+        <span>Gravity <kbd>G</kbd></span>
+      </label>
+
+      <label class="row toggle">
+        <input type="checkbox" id="collisions" autocomplete="off" checked>
+        <span>Ball collisions <kbd>C</kbd></span>
+      </label>
+
+      <label class="row toggle">
+        <input type="checkbox" id="trails" autocomplete="off" checked>
+        <span>Trails <kbd>T</kbd></span>
+      </label>
+
+      <label class="row toggle">
+        <input type="checkbox" id="glow" autocomplete="off" checked>
+        <span>Glow <kbd>B</kbd></span>
+      </label>
+
+      <p class="hint">
+        Drag a ball to fling it. Click empty space for a shockwave.<br>
+        <kbd>Space</kbd> pause &middot; <kbd>&plusmn;</kbd> add/remove &middot;
+        <kbd>&uarr;</kbd><kbd>&darr;</kbd> speed &middot; <kbd>R</kbd> reset
+      </p>
+    </div>
+  </section>
+
+  <script src="physics.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

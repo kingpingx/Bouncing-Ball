@@ -83,6 +83,10 @@ html, body {
   top: 18px;
   right: 20px;
   width: 250px;
+  /* Never taller than the window: on a short one the panel scrolls instead of
+     spilling its bottom rows off-screen where they cannot be reached. */
+  max-height: calc(100vh - 36px);
+  overflow-y: auto;
   padding: 14px 16px 16px;
   border: 1px solid var(--border);
   border-radius: var(--radius);

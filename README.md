@@ -7,6 +7,8 @@ bounce off each other with conserved momentum, and drag a trail behind them.
 Zero dependencies on either side — the Python version uses only the standard library, and the
 web version is plain HTML, CSS and JavaScript with no build step.
 
+**[Try it in your browser →](https://kingpingx.github.io/Bouncing-Ball/)**
+
 ![The same simulation running in both versions: Python with turtle on the left, JavaScript on canvas on the right](docs/both.png)
 
 <p align="center"><em>The same seed, the same fourteen balls, the same maths — one drawn with
@@ -18,8 +20,10 @@ turtle, one with canvas.</em></p>
 
 ### Browser — no install
 
-Open `web/index.html` in any modern browser. That is the whole procedure; it works straight
-off the disk, no server needed.
+The live demo is at **<https://kingpingx.github.io/Bouncing-Ball/>** — nothing to download.
+
+To run your own copy, open `web/index.html` in any modern browser. That is the whole
+procedure; it works straight off the disk, no server needed.
 
 ### Python — no install either
 
@@ -63,8 +67,11 @@ the speed of your throw.
 The browser version can be preset from the URL:
 
 ```
-web/index.html?balls=20&gravity=1&restitution=0.85&seed=42&collisions=0&trails=0
+https://kingpingx.github.io/Bouncing-Ball/web/?balls=20&gravity=1&restitution=0.85&seed=42
 ```
+
+The same query string works on a local copy: `web/index.html?balls=20&gravity=1`. Every
+option: `balls`, `gravity`, `restitution`, `seed`, `collisions`, `trails`.
 
 ---
 
@@ -131,6 +138,7 @@ the sign of gravity and about nothing else.
 
 ```
 main.py                  entry point: python main.py [options]
+index.html               redirect to web/, so GitHub Pages serves the demo at the root
 docs/
   physics.md             the formula from zero, in Python and JavaScript,
                          plus the original approach and how to fix it
